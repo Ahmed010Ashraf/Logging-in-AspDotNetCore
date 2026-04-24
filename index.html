@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASP.NET Core Logging — Complete Course</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+
+    --surface2: #23273a;
+    --border: #2e3348;
+    --accent: #7c6af7;
+    --accent2: #56cfb2;
+    --accent3: #f7936a;
+    --text: #e2e4f0;
+    --text-muted: #7a7f9a;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --code-bg: #12151f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  #sidebar {
+    width: 280px; min-width: 280px; background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; z-index: 100;
+  }
+  #sidebar-header { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); }
+  #sidebar-header .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  #sidebar-header .logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  #sidebar-header h2 { font-size: 13px; font-weight: 700; letter-spacing: .5px; color: var(--text); }
+  #sidebar-header p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .progress-bar { height: 4px; background: var(--border); border-radius: 4px; margin-top: 12px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; transition: width .4s; }
+  #progress-label { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+
+  .nav-section { padding: 10px 10px 4px; font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 14px; cursor: pointer;
+    border-radius: 7px; margin: 1px 8px; font-size: 13px; color: var(--text-muted); transition: all .15s; position: relative;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(124,106,247,.18); color: var(--accent); }
+  .nav-item.done .nav-num { background: var(--green); color: #000; }
+  .nav-num { width: 22px; height: 22px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .nav-item.active .nav-num { background: var(--accent); color: #fff; }
+  .nav-title { flex: 1; line-height: 1.3; }
+  .nav-badge { font-size: 9px; background: var(--accent); color: #fff; padding: 2px 6px; border-radius: 10px; }
+
+  /* Main */
+  #main { margin-left: 280px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  #topbar { padding: 16px 32px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface); position: sticky; top: 0; z-index: 50; }
+  #topbar h1 { font-size: 16px; font-weight: 700; }
+  #topbar .meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .btn { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #6a59e0; }
+  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); margin-right: 8px; }
+  .btn-outline:hover { background: var(--surface2); }
+
+  #content { padding: 36px 40px; max-width: 900px; flex: 1; }
+
+  .lesson-header { margin-bottom: 28px; }
+  .lesson-tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .5px; background: rgba(124,106,247,.2); color: var(--accent); padding: 3px 10px; border-radius: 20px; margin-bottom: 12px; }
+  .lesson-title { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+  .lesson-subtitle { font-size: 15px; color: var(--text-muted); line-height: 1.6; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 20px; }
+  .card h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .card p, .card li { font-size: 14px; line-height: 1.75; color: var(--text); }
+  .card ul, .card ol { padding-left: 20px; }
+  .card li { margin-bottom: 5px; }
+
+  .concept-box { border-left: 3px solid var(--accent); padding-left: 16px; margin: 16px 0; }
+  .concept-box p { color: var(--text); font-size: 14px; line-height: 1.7; }
+
+  /* Code blocks */
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 16px 0; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .code-lang { font-size: 11px; font-weight: 700; color: var(--accent2); letter-spacing: .5px; }
+  .code-copy { font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); transition: all .15s; }
+  .code-copy:hover { background: var(--surface); color: var(--text); }
+  pre { padding: 16px 18px; overflow-x: auto; font-size: 13px; line-height: 1.65; font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace; }
+  .kw { color: #c792ea; } .cls { color: #82aaff; } .str { color: #c3e88d; }
+  .cm { color: #546e7a; font-style: italic; } .num { color: #f78c6c; }
+  .met { color: #89ddff; } .var { color: var(--text); } .attr { color: #ffcb6b; }
+  .iface { color: #addb67; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  .info-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .info-card .ic-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .info-card p { font-size: 13px; line-height: 1.6; }
+
+  .level-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-left: 8px; }
+  .lvl-trace { background: rgba(148,163,184,.2); color: #94a3b8; }
+  .lvl-debug { background: rgba(96,165,250,.2); color: #60a5fa; }
+  .lvl-info { background: rgba(74,222,128,.2); color: #4ade80; }
+  .lvl-warn { background: rgba(251,191,36,.2); color: #fbbf24; }
+  .lvl-error { background: rgba(248,113,113,.2); color: #f87171; }
+  .lvl-critical { background: rgba(192,38,211,.2); color: #e879f9; }
+
+  .level-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  .level-table th { text-align: left; padding: 8px 12px; background: var(--surface2); color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+  .level-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  .level-table tr:last-child td { border-bottom: none; }
+
+  .tip-box { background: rgba(86,207,178,.08); border: 1px solid rgba(86,207,178,.25); border-radius: 10px; padding: 14px 16px; margin: 16px 0; display: flex; gap: 10px; }
+  .tip-box .tip-icon { font-size: 18px; flex-shrink: 0; }
+  .tip-box p { font-size: 13px; line-height: 1.6; color: var(--text); }
+
+  .warn-box { background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.25); border-radius: 10px; padding: 14px 16px; margin: 16px 0; display: flex; gap: 10px; }
+  .warn-box p { font-size: 13px; line-height: 1.6; }
+
+  .step-list { counter-reset: steps; }
+  .step-item { counter-increment: steps; display: flex; gap: 14px; margin-bottom: 18px; align-items: flex-start; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; margin-top: 2px; }
+  .step-body h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .step-body p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+  .quiz-area { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin-top: 24px; }
+  .quiz-area h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .quiz-q { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+  .quiz-opt { padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 13px; transition: all .15s; text-align: left; color: var(--text); }
+  .quiz-opt:hover { border-color: var(--accent); background: rgba(124,106,247,.1); }
+  .quiz-opt.correct { border-color: var(--green); background: rgba(74,222,128,.1); color: var(--green); }
+  .quiz-opt.wrong { border-color: var(--red); background: rgba(248,113,113,.1); color: var(--red); }
+  .quiz-feedback { margin-top: 12px; font-size: 13px; padding: 10px 14px; border-radius: 8px; display: none; }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.ok { background: rgba(74,222,128,.1); color: var(--green); border: 1px solid rgba(74,222,128,.3); }
+  .quiz-feedback.fail { background: rgba(248,113,113,.1); color: var(--red); border: 1px solid rgba(248,113,113,.3); }
+
+  .nav-buttons { display: flex; justify-content: space-between; align-items: center; padding: 24px 40px; border-top: 1px solid var(--border); }
+  .lesson-complete { text-align: center; padding: 40px 20px; }
+  .lesson-complete .check-icon { font-size: 48px; margin-bottom: 12px; }
+  .lesson-complete h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  .lesson-complete p { color: var(--text-muted); font-size: 14px; }
+
+  @media (max-width: 768px) {
+    #sidebar { display: none; }
+    #main { margin-left: 0; }
+    #content { padding: 20px 18px; }
+    .info-grid { grid-template-columns: 1fr; }
+  }
+  .hidden { display: none; }
+  code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: 'Cascadia Code', Consolas, monospace; color: var(--accent2); }
+  h4 { font-size: 15px; font-weight: 700; margin: 18px 0 8px; }
+  p { line-height: 1.75; font-size: 14px; }
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .tag { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--surface2); border: 1px solid var(--border); }
+  .arch-diagram { background: var(--code-bg); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 16px 0; font-family: monospace; font-size: 12px; line-height: 2; color: var(--text-muted); text-align: center; }
+  .arch-diagram .box { display: inline-block; border: 1px solid var(--accent); border-radius: 6px; padding: 6px 14px; color: var(--accent); margin: 4px; }
+  .arch-diagram .box2 { display: inline-block; border: 1px solid var(--accent2); border-radius: 6px; padding: 6px 14px; color: var(--accent2); margin: 4px; }
+  .arch-diagram .box3 { display: inline-block; border: 1px solid var(--accent3); border-radius: 6px; padding: 6px 14px; color: var(--accent3); margin: 4px; }
+  .arrow { color: var(--text-muted); margin: 0 6px; }
+
+  #page-footer { background: var(--surface); border-top: 1px solid var(--border); padding: 18px 40px; color: var(--text-muted); font-size: 13px; text-align: center; 
+  
+  }
+  #page-footer p { margin: 6px 0; }
+  #page-footer a { color: var(--accent2); text-decoration: none; }
+  #page-footer a:hover { text-decoration: underline; }
+  #page-footer .footer-label { color: var(--text); font-weight: 700; margin-right: 4px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div id="sidebar-header">
+    <div class="logo">
+      <div class="logo-icon">📋</div>
+      <div>
+        <h2>ASP.NET Core Logging</h2>
+        <p>Complete Course</p>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <div id="progress-label">0 / 9 lessons completed</div>
+  </div>
+
+  <div class="nav-section">Fundamentals</div>
+  <div class="nav-item active" onclick="goTo(0)"><div class="nav-num" id="nn0">1</div><div class="nav-title">How .NET Handles Logging</div></div>
+  <div class="nav-item" onclick="goTo(1)"><div class="nav-num" id="nn1">2</div><div class="nav-title">Log Levels Explained</div></div>
+  <div class="nav-item" onclick="goTo(2)"><div class="nav-num" id="nn2">3</div><div class="nav-title">ILogger & Dependency Injection</div></div>
+
+  <div class="nav-section">Configuration</div>
+  <div class="nav-item" onclick="goTo(3)"><div class="nav-num" id="nn3">4</div><div class="nav-title">appsettings.json Configuration</div></div>
+  <div class="nav-item" onclick="goTo(4)"><div class="nav-num" id="nn4">5</div><div class="nav-title">Structured Logging & Scopes</div></div>
+  <div class="nav-item" onclick="goTo(5)"><div class="nav-num" id="nn5">6</div><div class="nav-title">Built-in Providers</div></div>
+
+  <div class="nav-section">Advanced</div>
+  <div class="nav-item" onclick="goTo(6)"><div class="nav-num" id="nn6">7</div><div class="nav-title">Serilog Integration</div></div>
+  <div class="nav-item" onclick="goTo(7)"><div class="nav-num" id="nn7">8</div><div class="nav-title">Custom Log Provider</div></div>
+  <div class="nav-item" onclick="goTo(8)"><div class="nav-num" id="nn8">9</div><div class="nav-title">Production Best Practices</div></div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="topbar">
+    <div>
+      <div id="topbar-title" style="font-size:16px;font-weight:700;">Lesson 1 — How .NET Handles Logging</div>
+      <div class="meta" id="topbar-meta">Fundamentals · ~10 min read</div>
+    </div>
+    <div>
+      <button class="btn btn-outline" onclick="prevLesson()">← Prev</button>
+      <button class="btn btn-primary" onclick="nextLesson()">Next →</button>
+    </div>
+  </div>
+
+  <div id="content">
+    <!-- ======================== LESSON 0 ======================== -->
+    <div id="lesson-0">
+      <div class="lesson-header">
+        <div class="lesson-tag">LESSON 1 · FUNDAMENTALS</div>
+        <div class="lesson-title">How .NET Handles Logging</div>
+        <div class="lesson-subtitle">Understand the complete architecture behind ASP.NET Core's logging system — from the abstraction layer to providers and categories.</div>
+      </div>
+
+      <div class="card">
+        <h3>🏗️ The Big Picture</h3>
+        <p>ASP.NET Core logging is built on a clean, provider-based architecture. Microsoft designed it so your application code never depends on a specific logging library — you always code against an <strong>abstraction</strong>, and you can swap the actual logging "sink" (Console, File, Database, Cloud…) without changing a single line of your application code.</p>
+        <div class="arch-diagram">
+          <div style="margin-bottom:8px;color:var(--text);font-weight:700;">ASP.NET Core Logging Architecture</div>
+          <br>
+          <span class="box">Your Code</span>
+          <span class="arrow">↓ uses</span>
+          <br>
+          <span class="box">ILogger&lt;T&gt;</span>
+          <span class="arrow">↓ abstraction defined in</span>
+          <br>
+          <span class="box">Microsoft.Extensions.Logging</span>
+          <span class="arrow">↓ sends to</span>
+          <br>
+          <span class="box2">ILoggerFactory</span>
+          <span class="arrow">↓ dispatches to</span>
+          <br>
+          <span class="box3">Provider 1 (Console)</span> &nbsp;
+          <span class="box3">Provider 2 (File)</span> &nbsp;
+          <span class="box3">Provider 3 (Serilog)</span>
+        </div>
+        <p>This pattern is called the <strong>Provider Pattern</strong>. Your code logs once, and <em>all registered providers</em> receive the message.</p>
+      </div>
+
+      <div class="card">
+        <h3>📦 The Three Core Packages</h3>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="ic-title">Abstractions</div>
+            <code>Microsoft.Extensions.Logging.Abstractions</code>
+            <p style="margin-top:8px;">Contains the interfaces: <code>ILogger</code>, <code>ILogger&lt;T&gt;</code>, <code>ILoggerFactory</code>, <code>ILoggerProvider</code>. This is what your code references.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">Core Implementation</div>
+            <code>Microsoft.Extensions.Logging</code>
+            <p style="margin-top:8px;">Implements the factory, DI registration, log filtering, and the logger itself. Included in ASP.NET Core by default.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">Console Provider</div>
+            <code>Microsoft.Extensions.Logging.Console</code>
+            <p style="margin-top:8px;">The built-in provider that writes to stdout. Automatically registered in web apps via <code>WebApplication.CreateBuilder()</code>.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">Configuration</div>
+            <code>Microsoft.Extensions.Configuration</code>
+            <p style="margin-top:8px;">Lets you control log levels per category from <code>appsettings.json</code> or environment variables — no code recompile needed.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🔑 Key Concepts You Must Know</h3>
+        <h4>1. Log Category</h4>
+        <p>Every log entry has a <strong>category</strong> — this is simply the fully-qualified name of the class that created the logger. When you inject <code>ILogger&lt;MyService&gt;</code>, the category becomes <code>"YourApp.Services.MyService"</code>. This lets you filter logs with surgical precision — you can set one noise level for Microsoft's own framework logs and a different level for your own code.</p>
+
+        <h4>2. Log Event ID</h4>
+        <p>Optionally, each log call can include an <code>EventId</code> — an integer + name pair. This is extremely useful in large systems to <strong>search, alert, or route</strong> specific events. Example: event 5001 = "Order placed", event 5002 = "Payment failed".</p>
+
+        <h4>3. Log Provider</h4>
+        <p>A provider is the thing that decides <em>where</em> your log goes — Console, Debug, EventLog, Application Insights, a file, a database, etc. You register providers during app startup. Multiple providers can be active at the same time.</p>
+
+        <h4>4. ILoggerFactory vs ILogger&lt;T&gt;</h4>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="ic-title">ILoggerFactory</div>
+            <p>The central hub. Creates loggers, holds all providers, applies filters. You rarely use this directly in your own code.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">ILogger&lt;T&gt;</div>
+            <p>What you inject into your classes. Pre-scoped to the class name as category. This is what you use 99% of the time.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🚀 Your First Logger — Hello Logging</h3>
+        <p>In a brand new ASP.NET Core Web API, logging is already wired up. Here's how minimal it is to start:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Program.cs (Minimal API)</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="kw">var</span> builder = <span class="cls">WebApplication</span>.<span class="met">CreateBuilder</span>(args);
+
+<span class="cm">// ✅ Logging is already registered by CreateBuilder()!</span>
+<span class="cm">// Console, Debug, EventSource providers are included automatically.</span>
+
+<span class="kw">var</span> app = builder.<span class="met">Build</span>();
+
+app.<span class="met">MapGet</span>(<span class="str">"/hello"</span>, (<span class="iface">ILogger</span>&lt;<span class="cls">Program</span>&gt; logger) =>
+{
+    logger.<span class="met">LogInformation</span>(<span class="str">"Hello endpoint was called!"</span>);
+    <span class="kw">return</span> <span class="str">"Hello World"</span>;
+});
+
+app.<span class="met">Run</span>();</pre>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">💡</div>
+          <p><strong>WebApplication.CreateBuilder()</strong> automatically calls <code>logging.AddConsole()</code>, <code>logging.AddDebug()</code>, and reads your <code>appsettings.json</code> Logging section. You get a fully working logging system with zero configuration.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📊 What Happens When You Call logger.LogInformation()?</h3>
+        <div class="step-list">
+          <div class="step-item"><div class="step-num">1</div><div class="step-body"><h4>Log entry is created</h4><p>A log entry object is built containing: category name, log level, event ID, message, exception (if any), and timestamp.</p></div></div>
+          <div class="step-item"><div class="step-num">2</div><div class="step-body"><h4>Filters are checked</h4><p>The framework checks: "Is this log level enabled for this category?" If the minimum level is Warning and you log Information, it's dropped here — no allocations, no work.</p></div></div>
+          <div class="step-item"><div class="step-num">3</div><div class="step-body"><h4>Each provider is called</h4><p>For each registered provider (Console, File, etc.), the framework checks the provider-specific filter, then calls <code>provider.Log()</code> if it passes.</p></div></div>
+          <div class="step-item"><div class="step-num">4</div><div class="step-body"><h4>Provider formats and outputs</h4><p>Each provider formats the entry in its own way and writes it to its destination — console, file, cloud service, etc.</p></div></div>
+        </div>
+      </div>
+
+      <div class="quiz-area">
+        <h3>🧠 Quick Check</h3>
+        <div class="quiz-q">In ASP.NET Core, when you call <code>logger.LogInformation()</code>, which interface are you calling it on?</div>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="answer(this, false)">A) ILoggerFactory</button>
+          <button class="quiz-opt" onclick="answer(this, true)">B) ILogger&lt;T&gt;</button>
+          <button class="quiz-opt" onclick="answer(this, false)">C) ILoggerProvider</button>
+          <button class="quiz-opt" onclick="answer(this, false)">D) LogManager</button>
+        </div>
+        <div class="quiz-feedback" id="qfb">✅ Correct! <code>ILogger&lt;T&gt;</code> is what you inject and use in your classes. <code>ILoggerFactory</code> creates loggers, and <code>ILoggerProvider</code> is implemented by each sink.</div>
+      </div>
+    </div>
+
+    <!-- ======================== LESSON 1 ======================== -->
+    <div id="lesson-1" class="hidden">
+      <div class="lesson-header">
+        <div class="lesson-tag">LESSON 2 · FUNDAMENTALS</div>
+        <div class="lesson-title">Log Levels Explained</div>
+        <div class="lesson-subtitle">Master all 6 log levels — understand what each means, when to use it, and how they control verbosity across environments.</div>
+      </div>
+
+      <div class="card">
+        <h3>📊 The 6 Log Levels (Lowest → Highest)</h3>
+        <table class="level-table">
+          <tr><th>Level</th><th>Value</th><th>Badge</th><th>Use when…</th></tr>
+          <tr><td><strong>Trace</strong></td><td>0</td><td><span class="level-badge lvl-trace">TRACE</span></td><td>Extremely detailed debugging — function entry/exit, variable values. <em>Never in production.</em></td></tr>
+          <tr><td><strong>Debug</strong></td><td>1</td><td><span class="level-badge lvl-debug">DEBUG</span></td><td>Useful during development — query parameters, method arguments, flow tracking.</td></tr>
+          <tr><td><strong>Information</strong></td><td>2</td><td><span class="level-badge lvl-info">INFO</span></td><td>Normal application flow milestones — user logged in, order created, service started.</td></tr>
+          <tr><td><strong>Warning</strong></td><td>3</td><td><span class="level-badge lvl-warn">WARN</span></td><td>Something unexpected but recoverable — retry attempted, deprecated API used, config missing.</td></tr>
+          <tr><td><strong>Error</strong></td><td>4</td><td><span class="level-badge lvl-error">ERROR</span></td><td>A failure that affects a specific request/operation — exception caught, DB query failed.</td></tr>
+          <tr><td><strong>Critical</strong></td><td>5</td><td><span class="level-badge lvl-critical">CRITICAL</span></td><td>System-wide failure — out of memory, disk full, complete service outage. Wake someone up!</td></tr>
+        </table>
+        <div class="tip-box"><div class="tip-icon">💡</div><p>There is also <strong>LogLevel.None (6)</strong> — a special value used in <em>configuration only</em> to completely disable all logging for a category. You never log at level None.</p></div>
+      </div>
+
+      <div class="card">
+        <h3>✍️ How to Write Each Level</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — All log level methods</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="kw">public class</span> <span class="cls">OrderService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">ILogger</span>&lt;<span class="cls">OrderService</span>&gt; _logger;
+
+    <span class="kw">public</span> <span class="cls">OrderService</span>(<span class="iface">ILogger</span>&lt;<span class="cls">OrderService</span>&gt; logger)
+    {
+        _logger = logger;
+    }
+
+    <span class="kw">public void</span> <span class="met">ProcessOrder</span>(<span class="kw">int</span> orderId, <span class="kw">string</span> userId)
+    {
+        <span class="cm">// Trace: ultra-detailed, only when debugging deep issues</span>
+        _logger.<span class="met">LogTrace</span>(<span class="str">"Entering ProcessOrder. orderId={OrderId}, userId={UserId}"</span>, orderId, userId);
+
+        <span class="cm">// Debug: helpful in development</span>
+        _logger.<span class="met">LogDebug</span>(<span class="str">"Looking up order {OrderId} from database"</span>, orderId);
+
+        <span class="cm">// Information: normal happy path</span>
+        _logger.<span class="met">LogInformation</span>(<span class="str">"Processing order {OrderId} for user {UserId}"</span>, orderId, userId);
+
+        <span class="cm">// Warning: something off but not broken</span>
+        _logger.<span class="met">LogWarning</span>(<span class="str">"Order {OrderId} is using a deprecated payment method"</span>, orderId);
+
+        <span class="cm">// Error: something failed (pass the exception!)</span>
+        <span class="kw">try</span> { <span class="cm">/* ... */</span> }
+        <span class="kw">catch</span> (<span class="cls">Exception</span> ex)
+        {
+            _logger.<span class="met">LogError</span>(ex, <span class="str">"Failed to process order {OrderId}"</span>, orderId);
+        }
+
+        <span class="cm">// Critical: system is going down</span>
+        _logger.<span class="met">LogCritical</span>(<span class="str">"Payment provider is completely unreachable. System halted."</span>);
+    }
+}</pre>
+        </div>
+        <div class="warn-box"><div class="tip-icon">⚠️</div><p><strong>Always pass the exception as the first argument</strong> to LogError/LogCritical — not inside the string. <code>LogError(ex, "message")</code> ✅ vs <code>LogError("Error: " + ex.Message)</code> ❌. The first form captures the full stack trace properly.</p></div>
+      </div>
+
+      <div class="card">
+        <h3>🌍 Log Levels by Environment</h3>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="ic-title">Development</div>
+            <p>Set minimum to <code>Debug</code> or even <code>Trace</code>. You want maximum detail to understand what's happening.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">Staging</div>
+            <p>Set to <code>Information</code>. Enough to verify business logic without drowning in noise.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">Production</div>
+            <p>Set to <code>Warning</code> or <code>Information</code>. Noise costs money (log storage) and makes real issues harder to find.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">Microsoft Framework Logs</div>
+            <p>Set <code>Microsoft.*</code> to <code>Warning</code> even in dev — framework logs are extremely noisy at lower levels.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>⚡ IsEnabled — Performance Tip</h3>
+        <p>Building complex log messages (string concatenation, object serialization) has a cost — <em>even if the log is filtered out</em>. Use <code>IsEnabled()</code> to guard expensive operations:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — IsEnabled guard</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// ❌ BAD — serializes the entire order object even if Debug is disabled</span>
+_logger.<span class="met">LogDebug</span>(<span class="str">"Full order: {Order}"</span>, <span class="cls">JsonSerializer</span>.<span class="met">Serialize</span>(order));
+
+<span class="cm">// ✅ GOOD — only pays the cost if Debug level is actually enabled</span>
+<span class="kw">if</span> (_logger.<span class="met">IsEnabled</span>(<span class="cls">LogLevel</span>.<span class="attr">Debug</span>))
+{
+    _logger.<span class="met">LogDebug</span>(<span class="str">"Full order: {Order}"</span>, <span class="cls">JsonSerializer</span>.<span class="met">Serialize</span>(order));
+}</pre>
+        </div>
+        <div class="tip-box"><div class="tip-icon">💡</div><p>For simple string interpolation, ASP.NET Core already skips allocation when the level is disabled. The guard above is specifically needed when <strong>creating the arguments themselves</strong> is expensive (serialization, DB calls, etc.).</p></div>
+      </div>
+
+      <div class="quiz-area">
+        <h3>🧠 Quick Check</h3>
+        <div class="quiz-q">Your application catches an exception in a payment processing method. The payment failed for that specific request but the system is still running. Which log level should you use?</div>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="answer(this, false)">A) Warning</button>
+          <button class="quiz-opt" onclick="answer(this, true)">B) Error</button>
+          <button class="quiz-opt" onclick="answer(this, false)">C) Critical</button>
+          <button class="quiz-opt" onclick="answer(this, false)">D) Information</button>
+        </div>
+        <div class="quiz-feedback" id="qfb">✅ Correct! <strong>Error</strong> is right for a failure that affects a specific operation. Critical would be if the <em>entire payment system</em> was down and no one could pay.</div>
+      </div>
+    </div>
+
+    <!-- ======================== LESSON 2 ======================== -->
+    <div id="lesson-2" class="hidden">
+      <div class="lesson-header">
+        <div class="lesson-tag">LESSON 3 · FUNDAMENTALS</div>
+        <div class="lesson-title">ILogger &amp; Dependency Injection</div>
+        <div class="lesson-subtitle">Learn all the ways to get a logger into your classes, and understand the powerful message template syntax.</div>
+      </div>
+
+      <div class="card">
+        <h3>💉 Getting ILogger via DI</h3>
+        <p>The standard way — inject <code>ILogger&lt;T&gt;</code> into your constructor. The type parameter <code>T</code> becomes the log category (the class name).</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Constructor Injection (most common)</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="kw">public class</span> <span class="cls">UserService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">ILogger</span>&lt;<span class="cls">UserService</span>&gt; _logger;
+    <span class="kw">private readonly</span> <span class="cls">AppDbContext</span> _db;
+
+    <span class="kw">public</span> <span class="cls">UserService</span>(<span class="iface">ILogger</span>&lt;<span class="cls">UserService</span>&gt; logger, <span class="cls">AppDbContext</span> db)
+    {
+        _logger = logger; <span class="cm">// Category: "YourApp.Services.UserService"</span>
+        _db = db;
+    }
+
+    <span class="kw">public async</span> <span class="cls">Task</span>&lt;<span class="cls">User</span>?&gt; <span class="met">GetUserAsync</span>(<span class="kw">int</span> id)
+    {
+        _logger.<span class="met">LogDebug</span>(<span class="str">"Fetching user {UserId}"</span>, id);
+        <span class="kw">var</span> user = <span class="kw">await</span> _db.<span class="attr">Users</span>.<span class="met">FindAsync</span>(id);
+
+        <span class="kw">if</span> (user == <span class="kw">null</span>)
+            _logger.<span class="met">LogWarning</span>(<span class="str">"User {UserId} not found"</span>, id);
+
+        <span class="kw">return</span> user;
+    }
+}</pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — In Controllers (same pattern)</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre>[<span class="cls">ApiController</span>]
+[<span class="cls">Route</span>(<span class="str">"api/[controller]"</span>)]
+<span class="kw">public class</span> <span class="cls">OrdersController</span> : <span class="cls">ControllerBase</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">ILogger</span>&lt;<span class="cls">OrdersController</span>&gt; _logger;
+
+    <span class="kw">public</span> <span class="cls">OrdersController</span>(<span class="iface">ILogger</span>&lt;<span class="cls">OrdersController</span>&gt; logger)
+    {
+        _logger = logger;
+    }
+
+    [<span class="cls">HttpGet</span>(<span class="str">"{id}"</span>)]
+    <span class="kw">public</span> <span class="cls">IActionResult</span> <span class="met">GetOrder</span>(<span class="kw">int</span> id)
+    {
+        _logger.<span class="met">LogInformation</span>(<span class="str">"Getting order {OrderId}"</span>, id);
+        <span class="cm">// ...</span>
+        <span class="kw">return</span> <span class="met">Ok</span>();
+    }
+}</pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📝 Message Templates — The Right Way to Log</h3>
+        <p>ASP.NET Core uses <strong>message templates</strong>, not string interpolation. The placeholders <code>{Name}</code> in curly braces are named, and the values are passed separately.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Message Templates</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// ✅ CORRECT — use message templates</span>
+_logger.<span class="met">LogInformation</span>(<span class="str">"User {UserId} placed order {OrderId} for ${Amount}"</span>,
+    userId, orderId, amount);
+
+<span class="cm">// ❌ WRONG — string interpolation (defeats structured logging)</span>
+_logger.<span class="met">LogInformation</span>(<span class="str">$"User {userId} placed order {orderId} for ${amount}"</span>);
+
+<span class="cm">// ❌ WRONG — string concatenation (same problem)</span>
+_logger.<span class="met">LogInformation</span>(<span class="str">"User "</span> + userId + <span class="str">" placed order "</span> + orderId);</pre>
+        </div>
+        <div class="warn-box"><div class="tip-icon">⚠️</div><p>With <strong>string interpolation ($"...")</strong>, the message is already a plain string — the individual values are lost. With <strong>message templates</strong>, structured logging providers (like Serilog + Seq) can index and query by <code>UserId</code>, <code>OrderId</code>, etc. separately. This is one of the most important habits in .NET logging.</p></div>
+        <h4>Destructuring with @</h4>
+        <p>Use <code>@</code> prefix to serialize an entire object as structured data:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Object Destructuring</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="kw">var</span> order = <span class="kw">new</span> { Id = <span class="num">42</span>, Customer = <span class="str">"Ahmed"</span>, Total = <span class="num">199.99</span> };
+
+<span class="cm">// Without @ — logs order.ToString()</span>
+_logger.<span class="met">LogInformation</span>(<span class="str">"Order created: {Order}"</span>, order);
+
+<span class="cm">// With @ — serializes all properties as structured data</span>
+_logger.<span class="met">LogInformation</span>(<span class="str">"Order created: {@Order}"</span>, order);
+<span class="cm">// Output: Order created: { Id: 42, Customer: "Ahmed", Total: 199.99 }</span></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🏷️ EventId — Tagging Your Log Entries</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Using EventId</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// Define your event IDs as constants</span>
+<span class="kw">public static class</span> <span class="cls">LogEvents</span>
+{
+    <span class="kw">public static readonly</span> <span class="cls">EventId</span> UserLoggedIn  = <span class="kw">new</span>(<span class="num">1000</span>, <span class="str">"UserLoggedIn"</span>);
+    <span class="kw">public static readonly</span> <span class="cls">EventId</span> OrderPlaced   = <span class="kw">new</span>(<span class="num">2000</span>, <span class="str">"OrderPlaced"</span>);
+    <span class="kw">public static readonly</span> <span class="cls">EventId</span> PaymentFailed = <span class="kw">new</span>(<span class="num">3001</span>, <span class="str">"PaymentFailed"</span>);
+}
+
+<span class="cm">// Use them when logging</span>
+_logger.<span class="met">LogInformation</span>(<span class="cls">LogEvents</span>.<span class="attr">OrderPlaced</span>,
+    <span class="str">"Order {OrderId} placed by {UserId}"</span>, orderId, userId);
+
+_logger.<span class="met">LogError</span>(<span class="cls">LogEvents</span>.<span class="attr">PaymentFailed</span>, exception,
+    <span class="str">"Payment failed for order {OrderId}"</span>, orderId);</pre>
+        </div>
+        <div class="tip-box"><div class="tip-icon">💡</div><p>EventIds are optional but highly recommended in production systems. They let you search "all PaymentFailed events in the last hour" in your logging platform, set up alerts on specific events, and create dashboards per event type.</p></div>
+      </div>
+
+      <div class="card">
+        <h3>🔧 LoggerMessage.Define — High-Performance Logging</h3>
+        <p>For hot paths (high-frequency code), use <code>LoggerMessage.Define</code> to pre-compile log actions. It avoids boxing and is 3-10x faster than regular <code>LogXxx</code> calls:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — High-Performance Logging</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre"><span class="kw">public partial class</span> <span class="cls">OrderService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">ILogger</span>&lt;<span class="cls">OrderService</span>&gt; _logger;
+
+    <span class="cm">// Pre-compiled log action — zero allocation on hot path</span>
+    [<span class="cls">LoggerMessage</span>(
+        EventId = <span class="num">2000</span>,
+        Level = <span class="cls">LogLevel</span>.<span class="attr">Information</span>,
+        Message = <span class="str">"Order {OrderId} placed by user {UserId}"</span>)]
+    <span class="kw">private partial void</span> <span class="met">LogOrderPlaced</span>(<span class="kw">int</span> orderId, <span class="kw">string</span> userId);
+
+    <span class="kw">public void</span> <span class="met">PlaceOrder</span>(<span class="kw">int</span> orderId, <span class="kw">string</span> userId)
+    {
+        <span class="met">LogOrderPlaced</span>(orderId, userId); <span class="cm">// Compiler generates the fast implementation</span>
+    }
+}</pre>
+        </div>
+        <div class="tip-box"><div class="tip-icon">💡</div><p>The <code>[LoggerMessage]</code> source generator (available since .NET 6) automatically generates the high-performance logging code at compile time. Use it for any log call that happens in a tight loop or per-request critical path.</p></div>
+      </div>
+
+      <div class="quiz-area">
+        <h3>🧠 Quick Check</h3>
+        <div class="quiz-q">Why should you use message templates (<code>"User {Id} logged in"</code>) instead of string interpolation (<code>$"User {id} logged in"</code>)?</div>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="answer(this, false)">A) Templates are faster to type</button>
+          <button class="quiz-opt" onclick="answer(this, false)">B) Templates are required by the compiler</button>
+          <button class="quiz-opt" onclick="answer(this, true)">C) Templates preserve individual property values for structured logging and querying</button>
+          <button class="quiz-opt" onclick="answer(this, false)">D) There is no difference</button>
+        </div>
+        <div class="quiz-feedback" id="qfb">✅ Correct! Message templates keep the values as separate named properties. Structured logging tools can then index, filter, and query on <code>UserId = 42</code> specifically. Interpolation bakes everything into one flat string — all structure is lost.</div>
+      </div>
+    </div>
+
+    <!-- ======================== LESSON 3 ======================== -->
+    <div id="lesson-3" class="hidden">
+      <div class="lesson-header">
+        <div class="lesson-tag">LESSON 4 · CONFIGURATION</div>
+        <div class="lesson-title">appsettings.json Configuration</div>
+        <div class="lesson-subtitle">Master the Logging configuration section — control levels per category, per provider, and per environment without touching code.</div>
+      </div>
+
+      <div class="card">
+        <h3>📄 The Full Configuration Structure</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">JSON — appsettings.json (Full Example)</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre>{
+  <span class="str">"Logging"</span>: {
+    <span class="str">"LogLevel"</span>: {
+      <span class="cm">// Default minimum level for ALL categories and ALL providers</span>
+      <span class="str">"Default"</span>: <span class="str">"Information"</span>,
+
+      <span class="cm">// Microsoft framework internals — keep these quiet!</span>
+      <span class="str">"Microsoft"</span>: <span class="str">"Warning"</span>,
+
+      <span class="cm">// ASP.NET Core hosting — you usually don't need its Trace/Debug noise</span>
+      <span class="str">"Microsoft.AspNetCore"</span>: <span class="str">"Warning"</span>,
+
+      <span class="cm">// Entity Framework — SQL queries at Debug, warnings at Warning</span>
+      <span class="str">"Microsoft.EntityFrameworkCore.Database.Command"</span>: <span class="str">"Warning"</span>,
+
+      <span class="cm">// YOUR application — full detail</span>
+      <span class="str">"MyApp"</span>: <span class="str">"Debug"</span>,
+
+      <span class="cm">// A specific service — even more detail</span>
+      <span class="str">"MyApp.Services.PaymentService"</span>: <span class="str">"Trace"</span>
+    },
+    <span class="str">"Console"</span>: {
+      <span class="cm">// Provider-specific overrides (Console provider only)</span>
+      <span class="str">"LogLevel"</span>: {
+        <span class="str">"Default"</span>: <span class="str">"Warning"</span>
+      },
+      <span class="str">"FormatterName"</span>: <span class="str">"json"</span>
+    }
+  }
+}</pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🌿 Environment-Specific Config Files</h3>
+        <p>ASP.NET Core loads configuration in this order — later files <strong>override</strong> earlier ones:</p>
+        <div class="step-list">
+          <div class="step-item"><div class="step-num">1</div><div class="step-body"><h4>appsettings.json</h4><p>Base config — applies everywhere. Put safe defaults here.</p></div></div>
+          <div class="step-item"><div class="step-num">2</div><div class="step-body"><h4>appsettings.Development.json</h4><p>Overrides for local development. Set verbose levels here.</p></div></div>
+          <div class="step-item"><div class="step-num">3</div><div class="step-body"><h4>appsettings.Production.json</h4><p>Overrides for production. Set minimal levels here.</p></div></div>
+          <div class="step-item"><div class="step-num">4</div><div class="step-body"><h4>Environment Variables</h4><p>Highest priority. Use <code>Logging__LogLevel__Default=Warning</code> in containers/cloud.</p></div></div>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">JSON — appsettings.Development.json</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre>{
+  <span class="str">"Logging"</span>: {
+    <span class="str">"LogLevel"</span>: {
+      <span class="str">"Default"</span>: <span class="str">"Debug"</span>,
+      <span class="str">"Microsoft.AspNetCore"</span>: <span class="str">"Information"</span>,
+      <span class="str">"MyApp"</span>: <span class="str">"Trace"</span>
+    }
+  }
+}</pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">JSON — appsettings.Production.json</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre>{
+  <span class="str">"Logging"</span>: {
+    <span class="str">"LogLevel"</span>: {
+      <span class="str">"Default"</span>: <span class="str">"Warning"</span>,
+      <span class="str">"Microsoft"</span>: <span class="str">"Warning"</span>,
+      <span class="str">"MyApp"</span>: <span class="str">"Information"</span>
+    }
+  }
+}</pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🔑 Category Matching Rules</h3>
+        <p>Categories use a <strong>longest prefix match</strong> rule. Given the category <code>MyApp.Services.OrderService</code>, the framework checks:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Matching Priority (highest to lowest)</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre>1. "MyApp.Services.OrderService"  ← exact match (highest priority)
+2. "MyApp.Services"               ← prefix match
+3. "MyApp"                        ← prefix match
+4. "Default"                      ← fallback (lowest priority)</pre>
+        </div>
+        <div class="tip-box"><div class="tip-icon">💡</div><p>You can silence the extremely noisy EF Core SQL logging with: <code>"Microsoft.EntityFrameworkCore": "Warning"</code> while keeping your own app's logs verbose. This is one of the most practical config tricks in real projects.</p></div>
+      </div>
+
+      <div class="card">
+        <h3>⚙️ Configuring Logging in Program.cs</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Program.cs — Full Logging Setup</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="kw">var</span> builder = <span class="cls">WebApplication</span>.<span class="met">CreateBuilder</span>(args);
+
+builder.<span class="attr">Logging</span>
+    <span class="cm">// Remove all default providers</span>
+    .<span class="met">ClearProviders</span>()
+
+    <span class="cm">// Add only the providers you want</span>
+    .<span class="met">AddConsole</span>()
+    .<span class="met">AddDebug</span>()
+
+    <span class="cm">// Set minimum level programmatically (config file takes precedence)</span>
+    .<span class="met">SetMinimumLevel</span>(<span class="cls">LogLevel</span>.<span class="attr">Information</span>)
+
+    <span class="cm">// Fine-grained filter via code</span>
+    .<span class="met">AddFilter</span>(<span class="str">"Microsoft"</span>, <span class="cls">LogLevel</span>.<span class="attr">Warning</span>)
+    .<span class="met">AddFilter</span>(<span class="str">"MyApp"</span>, <span class="cls">LogLevel</span>.<span class="attr">Debug</span>)
+
+    <span class="cm">// Read config from appsettings.json (this is automatic, shown for clarity)</span>
+    .<span class="met">AddConfiguration</span>(builder.<span class="attr">Configuration</span>.<span class="met">GetSection</span>(<span class="str">"Logging"</span>));</pre>
+        </div>
+        <div class="warn-box"><div class="tip-icon">⚠️</div><p><strong>ClearProviders()</strong> removes Console, Debug, and EventSource that are auto-registered. Call it when you want full control — e.g., when adding Serilog, you don't want duplicate output.</p></div>
+      </div>
+
+      <div class="quiz-area">
+        <h3>🧠 Quick Check</h3>
+        <div class="quiz-q">You have a category <code>MyApp.Services.EmailService</code> and your config has <code>"MyApp": "Warning"</code> and <code>"MyApp.Services": "Debug"</code>. Which level applies?</div>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="answer(this, false)">A) Warning — "MyApp" is shorter so it's the root</button>
+          <button class="quiz-opt" onclick="answer(this, true)">B) Debug — longest prefix match wins</button>
+          <button class="quiz-opt" onclick="answer(this, false)">C) Both apply simultaneously</button>
+          <button class="quiz-opt" onclick="answer(this, false)">D) Neither — you need an exact match</button>
+        </div>
+        <div class="quiz-feedback" id="qfb">✅ Correct! <strong>Longest prefix match wins</strong>. <code>MyApp.Services</code> is a longer (more specific) match for <code>MyApp.Services.EmailService</code> than <code>MyApp</code>, so Debug applies.</div>
+      </div>
+    </div>
+
+    <!-- ======================== LESSON 4 ======================== -->
+    <div id="lesson-4" class="hidden">
+      <div class="lesson-header">
+        <div class="lesson-tag">LESSON 5 · CONFIGURATION</div>
+        <div class="lesson-title">Structured Logging &amp; Scopes</div>
+        <div class="lesson-subtitle">Learn structured logging (logs as data, not text) and how log scopes let you attach context properties to a group of related log entries.</div>
+      </div>
+
+      <div class="card">
+        <h3>📊 Structured Logging vs Plain Text</h3>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="ic-title">❌ Plain Text Logging</div>
+            <p><code>"User 42 placed order 999 at 2024-01-15"</code><br><br>Just a string. You can grep it, but you can't query <em>all orders over $100 by user 42</em> without regex hacks.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">✅ Structured Logging</div>
+            <p><code>{ UserId: 42, OrderId: 999, Amount: 199.99, Timestamp: "..." }</code><br><br>A log is a <em>record</em> with typed fields. Query <code>WHERE UserId=42 AND Amount > 100</code>.</p>
+          </div>
+        </div>
+        <div class="tip-box"><div class="tip-icon">💡</div><p>When you use message templates (<code>"User {UserId} placed order {OrderId}"</code>), the logging framework stores <code>UserId</code> and <code>OrderId</code> as <strong>separate named properties</strong> — not just text. Providers like Serilog + Seq, Application Insights, or Elasticsearch can then index and query these as structured data.</p></div>
+      </div>
+
+      <div class="card">
+        <h3>🔭 Log Scopes — Context That Follows You</h3>
+        <p>A <strong>scope</strong> is a block of ambient context attached to all log entries made within it. Classic use case: attach the current HTTP request ID or user ID to every log in that request, without passing it explicitly to every method.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Using Log Scopes</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="kw">public async</span> <span class="cls">Task</span> <span class="met">ProcessOrderAsync</span>(<span class="kw">int</span> orderId, <span class="kw">string</span> userId)
+{
+    <span class="cm">// Everything logged inside this using block gets OrderId and UserId attached</span>
+    <span class="kw">using</span> (<span class="kw">var</span> scope = _logger.<span class="met">BeginScope</span>(
+        <span class="kw">new</span> <span class="cls">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">object</span>&gt;
+        {
+            [<span class="str">"OrderId"</span>] = orderId,
+            [<span class="str">"UserId"</span>] = userId,
+            [<span class="str">"CorrelationId"</span>] = <span class="cls">Guid</span>.<span class="met">NewGuid</span>()
+        }))
+    {
+        _logger.<span class="met">LogInformation</span>(<span class="str">"Starting order processing"</span>);
+        <span class="kw">await</span> <span class="met">ValidateOrderAsync</span>(orderId);    <span class="cm">// Logs here also get the scope</span>
+        <span class="kw">await</span> <span class="met">ChargePaymentAsync</span>(orderId);   <span class="cm">// And here</span>
+        _logger.<span class="met">LogInformation</span>(<span class="str">"Order processing complete"</span>);
+    }
+    <span class="cm">// Scope is disposed — context removed from subsequent logs</span>
+}</pre>
+        </div>
+        <p>All three log entries above will have <code>OrderId</code>, <code>UserId</code>, and <code>CorrelationId</code> in their structured properties — even though you didn't explicitly include them in each log call.</p>
+      </div>
+
+      <div class="card">
+        <h3>🔗 Correlation IDs — Tracing a Request End-to-End</h3>
+        <p>A correlation ID is a unique identifier you attach to every log entry for a given HTTP request. This lets you find all logs for a single user request — even across microservices.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Correlation ID Middleware</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="kw">public class</span> <span class="cls">CorrelationIdMiddleware</span>
+{
+    <span class="kw">private readonly</span> <span class="cls">RequestDelegate</span> _next;
+    <span class="kw">private readonly</span> <span class="iface">ILogger</span>&lt;<span class="cls">CorrelationIdMiddleware</span>&gt; _logger;
+
+    <span class="kw">public</span> <span class="cls">CorrelationIdMiddleware</span>(<span class="cls">RequestDelegate</span> next,
+        <span class="iface">ILogger</span>&lt;<span class="cls">CorrelationIdMiddleware</span>&gt; logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    <span class="kw">public async</span> <span class="cls">Task</span> <span class="met">InvokeAsync</span>(<span class="cls">HttpContext</span> context)
+    {
+        <span class="cm">// Get from header (for microservices) or generate new</span>
+        <span class="kw">var</span> correlationId = context.<span class="attr">Request</span>.<span class="attr">Headers</span>[<span class="str">"X-Correlation-ID"</span>]
+            .<span class="attr">FirstOrDefault</span>() ?? <span class="cls">Guid</span>.<span class="met">NewGuid</span>().<span class="met">ToString</span>();
+
+        context.<span class="attr">Response</span>.<span class="attr">Headers</span>.<span class="met">TryAdd</span>(<span class="str">"X-Correlation-ID"</span>, correlationId);
+
+        <span class="cm">// Attach to ALL logs for this request</span>
+        <span class="kw">using</span> (_logger.<span class="met">BeginScope</span>(<span class="kw">new</span> { CorrelationId = correlationId }))
+        {
+            <span class="kw">await</span> <span class="met">_next</span>(context);
+        }
+    }
+}
+
+<span class="cm">// Register in Program.cs</span>
+app.<span class="met">UseMiddleware</span>&lt;<span class="cls">CorrelationIdMiddleware</span>&gt;();</pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>⚙️ Enable Scopes in Configuration</h3>
+        <p>Scopes must be enabled in the console provider config (they're on by default in most providers, but good to be explicit):</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">JSON — appsettings.json</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre>{
+  <span class="str">"Logging"</span>: {
+    <span class="str">"Console"</span>: {
+      <span class="str">"IncludeScopes"</span>: <span class="kw">true</span>,
+      <span class="str">"FormatterName"</span>: <span class="str">"json"</span>
+    }
+  }
+}</pre>
+        </div>
+        <p>With <code>FormatterName: "json"</code>, the console outputs each log entry as a full JSON object — great for log aggregation tools like Datadog, Elastic, or Splunk that ingest JSON lines.</p>
+      </div>
+
+      <div class="quiz-area">
+        <h3>🧠 Quick Check</h3>
+        <div class="quiz-q">You call <code>_logger.BeginScope(new { RequestId = "abc-123" })</code>. What happens to log entries written inside the <code>using</code> block?</div>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="answer(this, false)">A) Only the first log entry gets the RequestId property</button>
+          <button class="quiz-opt" onclick="answer(this, true)">B) All log entries within the scope get RequestId attached as a property</button>
+          <button class="quiz-opt" onclick="answer(this, false)">C) The scope changes the log level</button>
+          <button class="quiz-opt" onclick="answer(this, false)">D) Nothing — scopes are only for filtering</button>
+        </div>
+        <div class="quiz-feedback" id="qfb">✅ Correct! Every log entry made inside the <code>using</code> block — including in called methods — automatically inherits the scope's properties. This is incredibly powerful for attaching request context to all logs.</div>
+      </div>
+    </div>
+
+    <!-- ======================== LESSON 5 ======================== -->
+    <div id="lesson-5" class="hidden">
+      <div class="lesson-header">
+        <div class="lesson-tag">LESSON 6 · CONFIGURATION</div>
+        <div class="lesson-title">Built-in Logging Providers</div>
+        <div class="lesson-subtitle">Explore all the logging providers that come with ASP.NET Core — Console, Debug, EventLog, and more — and how to configure each one.</div>
+      </div>
+
+      <div class="card">
+        <h3>📦 Built-in Providers Overview</h3>
+        <table class="level-table">
+          <tr><th>Provider</th><th>Package</th><th>Best For</th></tr>
+          <tr><td><strong>Console</strong></td><td>Microsoft.Extensions.Logging.Console</td><td>Local dev, Docker containers, cloud apps</td></tr>
+          <tr><td><strong>Debug</strong></td><td>Microsoft.Extensions.Logging.Debug</td><td>VS Output window during debugging</td></tr>
+          <tr><td><strong>EventSource</strong></td><td>Built-in</td><td>ETW tracing, dotnet-trace, PerfView</td></tr>
+          <tr><td><strong>EventLog</strong></td><td>Microsoft.Extensions.Logging.EventLog</td><td>Windows Event Viewer (Windows only)</td></tr>
+          <tr><td><strong>TraceSource</strong></td><td>Microsoft.Extensions.Logging.TraceSource</td><td>Legacy .NET tracing infrastructure</td></tr>
+          <tr><td><strong>AzureAppServices</strong></td><td>Microsoft.Extensions.Logging.AzureAppServices</td><td>Azure App Service file / blob logging</td></tr>
+          <tr><td><strong>ApplicationInsights</strong></td><td>Microsoft.ApplicationInsights.AspNetCore</td><td>Azure monitoring, telemetry, alerting</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>🖥️ Console Provider — Formatters</h3>
+        <p>The Console provider has three built-in formatters you can configure:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Console Formatter Options</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre>builder.<span class="attr">Logging</span>.<span class="met">AddConsole</span>(options =>
+{
+    <span class="cm">// Formatter: "simple" (default), "json", or "systemd"</span>
+    options.<span class="attr">FormatterName</span> = <span class="str">"json"</span>;
+});
+
+<span class="cm">// Or configure the formatter specifically:</span>
+builder.<span class="attr">Logging</span>.<span class="met">AddConsole</span>()
+    .<span class="met">AddConsoleFormatter</span>&lt;<span class="cls">JsonConsoleFormatter</span>, <span class="cls">JsonConsoleFormatterOptions</span>&gt;(opts =>
+    {
+        opts.<span class="attr">IncludeScopes</span> = <span class="kw">true</span>;
+        opts.<span class="attr">TimestampFormat</span> = <span class="str">"yyyy-MM-dd HH:mm:ss"</span>;
+        opts.<span class="attr">UseUtcTimestamp</span> = <span class="kw">true</span>;
+        opts.<span class="attr">JsonWriterOptions</span> = <span class="kw">new</span> <span class="cls">JsonWriterOptions</span> { Indented = <span class="kw">false</span> };
+    });</pre>
+        </div>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="ic-title">simple (default)</div>
+            <p>Human-readable colored output. Best for local development.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">json</div>
+            <p>Machine-readable JSON lines. Best for production containers and log aggregators.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">systemd</div>
+            <p>Compatible with systemd journal format. For Linux systemd-managed services.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">Custom</div>
+            <p>Implement <code>ConsoleFormatter</code> to fully control the output format.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🪟 Windows EventLog Provider</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — EventLog Setup</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre>builder.<span class="attr">Logging</span>.<span class="met">AddEventLog</span>(<span class="kw">new</span> <span class="cls">EventLogSettings</span>
+{
+    <span class="attr">SourceName</span> = <span class="str">"MyApp"</span>,
+    <span class="attr">LogName</span> = <span class="str">"Application"</span>,
+    <span class="attr">Filter</span> = (category, level) => level >= <span class="cls">LogLevel</span>.<span class="attr">Warning</span>
+});</pre>
+        </div>
+        <div class="warn-box"><div class="tip-icon">⚠️</div><p>EventLog provider only works on Windows. For cross-platform Windows Service logging, Serilog with a file sink is generally more portable.</p></div>
+      </div>
+
+      <div class="card">
+        <h3>☁️ Azure App Service Provider</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Azure App Service Logging</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// Add the NuGet package first:</span>
+<span class="cm">// dotnet add package Microsoft.Extensions.Logging.AzureAppServices</span>
+
+builder.<span class="attr">Logging</span>.<span class="met">AddAzureWebAppDiagnostics</span>();
+
+<span class="cm">// Configure in appsettings.json:</span>
+{
+  <span class="str">"Logging"</span>: {
+    <span class="str">"AzureAppServicesFile"</span>: {
+      <span class="str">"LogLevel"</span>: { <span class="str">"Default"</span>: <span class="str">"Warning"</span> },
+      <span class="str">"IsEnabled"</span>: <span class="kw">true</span>,
+      <span class="str">"FileName"</span>: <span class="str">"diagnostics-"</span>,
+      <span class="str">"FileSizeLimit"</span>: <span class="num">10485760</span>, <span class="cm">// 10MB</span>
+      <span class="str">"RetainedFileCountLimit"</span>: <span class="num">5</span>
+    },
+    <span class="str">"AzureAppServicesBlob"</span>: {
+      <span class="str">"LogLevel"</span>: { <span class="str">"Default"</span>: <span class="str">"Warning"</span> }
+    }
+  }
+}</pre>
+        </div>
+        <div class="tip-box"><div class="tip-icon">💡</div><p>When deployed to Azure App Service, you can enable/disable Application Logging and change the log level directly from the Azure Portal under <strong>Monitoring → App Service Logs</strong> — without redeploying your app.</p></div>
+      </div>
+
+      <div class="quiz-area">
+        <h3>🧠 Quick Check</h3>
+        <div class="quiz-q">Your app runs in a Docker container and logs are collected by a log aggregator that expects JSON format. Which Console formatter should you use?</div>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="answer(this, false)">A) simple</button>
+          <button class="quiz-opt" onclick="answer(this, true)">B) json</button>
+          <button class="quiz-opt" onclick="answer(this, false)">C) systemd</button>
+          <button class="quiz-opt" onclick="answer(this, false)">D) debug</button>
+        </div>
+        <div class="quiz-feedback" id="qfb">✅ Correct! The <strong>json</strong> formatter outputs each log entry as a single JSON object on one line. Log aggregators (Datadog, Elastic, Splunk, Loki) can parse this automatically and index all the fields.</div>
+      </div>
+    </div>
+
+    <!-- ======================== LESSON 6 ======================== -->
+    <div id="lesson-6" class="hidden">
+      <div class="lesson-header">
+        <div class="lesson-tag">LESSON 7 · ADVANCED</div>
+        <div class="lesson-title">Serilog Integration</div>
+        <div class="lesson-subtitle">Replace the built-in logging pipeline with Serilog — the most popular structured logging library for .NET — and wire it to powerful sinks.</div>
+      </div>
+
+      <div class="card">
+        <h3>🤔 Why Serilog?</h3>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="ic-title">Built-in Logging</div>
+            <p>Good defaults. Limited sinks. Console formatter is basic. No file rolling. Hard to write to multiple destinations with different formats.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">Serilog</div>
+            <p>80+ sinks (File, SQL, Elastic, Seq, Datadog…). Enrichers. Output templates. Destructuring policies. Rolling files. Async sink. Industry standard.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📦 Installation</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Shell — NuGet Packages</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre>dotnet add package Serilog.AspNetCore
+dotnet add package Serilog.Sinks.Console
+dotnet add package Serilog.Sinks.File
+dotnet add package Serilog.Enrichers.Environment
+dotnet add package Serilog.Enrichers.Thread
+dotnet add package Serilog.Settings.Configuration</pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>⚙️ Serilog Setup in Program.cs</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Program.cs with Serilog</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="kw">using</span> Serilog;
+<span class="kw">using</span> Serilog.Events;
+
+<span class="cm">// Bootstrap logger — captures startup errors before DI is ready</span>
+<span class="cls">Log</span>.<span class="attr">Logger</span> = <span class="kw">new</span> <span class="cls">LoggerConfiguration</span>()
+    .<span class="met">MinimumLevel</span>.<span class="met">Override</span>(<span class="str">"Microsoft"</span>, <span class="cls">LogEventLevel</span>.<span class="attr">Warning</span>)
+    .<span class="met">WriteTo</span>.<span class="met">Console</span>()
+    .<span class="met">CreateBootstrapLogger</span>();
+
+<span class="kw">try</span>
+{
+    <span class="cls">Log</span>.<span class="met">Information</span>(<span class="str">"Starting application"</span>);
+    <span class="kw">var</span> builder = <span class="cls">WebApplication</span>.<span class="met">CreateBuilder</span>(args);
+
+    <span class="cm">// Replace built-in logging with Serilog</span>
+    builder.<span class="attr">Host</span>.<span class="met">UseSerilog</span>((context, services, configuration) =>
+        configuration
+            <span class="cm">// Read from appsettings.json "Serilog" section</span>
+            .<span class="met">ReadFrom</span>.<span class="met">Configuration</span>(context.<span class="attr">Configuration</span>)
+            .<span class="met">ReadFrom</span>.<span class="met">Services</span>(services)
+
+            <span class="cm">// Minimum levels</span>
+            .<span class="met">MinimumLevel</span>.<span class="met">Information</span>()
+            .<span class="met">MinimumLevel</span>.<span class="met">Override</span>(<span class="str">"Microsoft"</span>, <span class="cls">LogEventLevel</span>.<span class="attr">Warning</span>)
+            .<span class="met">MinimumLevel</span>.<span class="met">Override</span>(<span class="str">"Microsoft.EntityFrameworkCore"</span>, <span class="cls">LogEventLevel</span>.<span class="attr">Warning</span>)
+
+            <span class="cm">// Enrichers — add machine name, thread ID, etc. to every log</span>
+            .<span class="met">Enrich</span>.<span class="met">FromLogContext</span>()
+            .<span class="met">Enrich</span>.<span class="met">WithMachineName</span>()
+            .<span class="met">Enrich</span>.<span class="met">WithThreadId</span>()
+            .<span class="met">Enrich</span>.<span class="met">WithEnvironmentName</span>()
+
+            <span class="cm">// Sinks</span>
+            .<span class="met">WriteTo</span>.<span class="met">Console</span>(<span class="kw">new</span> <span class="cls">ExpressionTemplate</span>(
+                <span class="str">"[{@t:HH:mm:ss} {@l:u3}] [{SourceContext}] {@m}\n{@x}"</span>))
+            .<span class="met">WriteTo</span>.<span class="met">File</span>(
+                path: <span class="str">"logs/app-.log"</span>,
+                rollingInterval: <span class="cls">RollingInterval</span>.<span class="attr">Day</span>,
+                retainedFileCountLimit: <span class="num">30</span>,
+                outputTemplate: <span class="str">"{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"</span>
+            )
+    );
+
+    <span class="kw">var</span> app = builder.<span class="met">Build</span>();
+    app.<span class="met">UseSerilogRequestLogging</span>(); <span class="cm">// Auto-log every HTTP request</span>
+
+    app.<span class="met">Run</span>();
+}
+<span class="kw">catch</span> (<span class="cls">Exception</span> ex)
+{
+    <span class="cls">Log</span>.<span class="met">Fatal</span>(ex, <span class="str">"Application terminated unexpectedly"</span>);
+}
+<span class="kw">finally</span>
+{
+    <span class="kw">await</span> <span class="cls">Log</span>.<span class="met">CloseAndFlushAsync</span>(); <span class="cm">// Flush buffers on shutdown</span>
+}</pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📋 Serilog in appsettings.json</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">JSON — Full Serilog config section</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre>{
+  <span class="str">"Serilog"</span>: {
+    <span class="str">"MinimumLevel"</span>: {
+      <span class="str">"Default"</span>: <span class="str">"Information"</span>,
+      <span class="str">"Override"</span>: {
+        <span class="str">"Microsoft"</span>: <span class="str">"Warning"</span>,
+        <span class="str">"System"</span>: <span class="str">"Warning"</span>
+      }
+    },
+    <span class="str">"WriteTo"</span>: [
+      { <span class="str">"Name"</span>: <span class="str">"Console"</span> },
+      {
+        <span class="str">"Name"</span>: <span class="str">"File"</span>,
+        <span class="str">"Args"</span>: {
+          <span class="str">"path"</span>: <span class="str">"logs/app-.log"</span>,
+          <span class="str">"rollingInterval"</span>: <span class="str">"Day"</span>,
+          <span class="str">"retainedFileCountLimit"</span>: <span class="num">30</span>
+        }
+      }
+    ],
+    <span class="str">"Enrich"</span>: [<span class="str">"FromLogContext"</span>, <span class="str">"WithMachineName"</span>, <span class="str">"WithThreadId"</span>]
+  }
+}</pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🔌 Popular Serilog Sinks</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Popular Sinks Setup</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// Seq (local structured log UI — free for dev)</span>
+.<span class="met">WriteTo</span>.<span class="met">Seq</span>(<span class="str">"http://localhost:5341"</span>)
+
+<span class="cm">// Elasticsearch</span>
+.<span class="met">WriteTo</span>.<span class="met">Elasticsearch</span>(<span class="kw">new</span> <span class="cls">ElasticsearchSinkOptions</span>(
+    <span class="kw">new</span> <span class="cls">Uri</span>(<span class="str">"http://localhost:9200"</span>)) {
+    <span class="attr">IndexFormat</span> = <span class="str">"myapp-{0:yyyy.MM.dd}"</span>
+})
+
+<span class="cm">// SQL Server</span>
+.<span class="met">WriteTo</span>.<span class="met">MSSqlServer</span>(connectionString, sinkOptions:
+    <span class="kw">new</span> <span class="cls">MSSqlServerSinkOptions</span> { TableName = <span class="str">"AppLogs"</span>, AutoCreateSqlTable = <span class="kw">true</span> })
+
+<span class="cm">// Application Insights</span>
+.<span class="met">WriteTo</span>.<span class="met">ApplicationInsights</span>(services.<span class="met">GetRequiredService</span>&lt;<span class="cls">TelemetryConfiguration</span>&gt;(),
+    <span class="cls">TelemetryConverter</span>.<span class="attr">Traces</span>)
+
+<span class="cm">// Datadog</span>
+.<span class="met">WriteTo</span>.<span class="met">DatadogLogs</span>(<span class="str">"YOUR_API_KEY"</span>, source: <span class="str">"csharp"</span>, service: <span class="str">"myapp"</span>)</pre>
+        </div>
+      </div>
+
+      <div class="quiz-area">
+        <h3>🧠 Quick Check</h3>
+        <div class="quiz-q">When using Serilog, why should you call <code>Log.CloseAndFlushAsync()</code> in the <code>finally</code> block?</div>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="answer(this, false)">A) To stop the logger from accepting new entries</button>
+          <button class="quiz-opt" onclick="answer(this, true)">B) To ensure all buffered log entries are written before the process exits</button>
+          <button class="quiz-opt" onclick="answer(this, false)">C) To release the log file lock</button>
+          <button class="quiz-opt" onclick="answer(this, false)">D) It's optional and has no real effect</button>
+        </div>
+        <div class="quiz-feedback" id="qfb">✅ Correct! Serilog (and many other sinks) buffer log entries asynchronously for performance. If the process exits without flushing, the last batch of logs can be lost. <code>CloseAndFlushAsync()</code> ensures they're all written.</div>
+      </div>
+    </div>
+
+    <!-- ======================== LESSON 7 ======================== -->
+    <div id="lesson-7" class="hidden">
+      <div class="lesson-header">
+        <div class="lesson-tag">LESSON 8 · ADVANCED</div>
+        <div class="lesson-title">Custom Log Provider</div>
+        <div class="lesson-subtitle">Build your own logging provider from scratch — understand the three interfaces you need and how the pipeline fits together.</div>
+      </div>
+
+      <div class="card">
+        <h3>🧩 The Three Interfaces</h3>
+        <p>To create a custom provider you implement three interfaces:</p>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="ic-title">ILoggerProvider</div>
+            <p>The factory. Creates <code>ILogger</code> instances for each category. Registered with DI. Implements <code>IDisposable</code>.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">ILogger</div>
+            <p>The actual logger for a single category. Has <code>Log()</code>, <code>IsEnabled()</code>, and <code>BeginScope()</code>.</p>
+          </div>
+          <div class="info-card">
+            <div class="ic-title">IExternalScopeProvider</div>
+            <p>Optional but recommended. Lets your provider access scope state (the properties set by <code>BeginScope()</code>).</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>💻 Complete Custom Provider Example</h3>
+        <p>Let's build a provider that logs to an in-memory collection (useful for testing):</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Custom In-Memory Logger</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// 1. The log entry record</span>
+<span class="kw">public record</span> <span class="cls">LogEntry</span>(
+    <span class="cls">LogLevel</span> Level,
+    <span class="kw">string</span> Category,
+    <span class="cls">EventId</span> EventId,
+    <span class="kw">string</span> Message,
+    <span class="cls">Exception</span>? Exception,
+    <span class="cls">DateTimeOffset</span> Timestamp);
+
+<span class="cm">// 2. The ILogger implementation</span>
+<span class="kw">public class</span> <span class="cls">InMemoryLogger</span> : <span class="iface">ILogger</span>
+{
+    <span class="kw">private readonly</span> <span class="kw">string</span> _category;
+    <span class="kw">private readonly</span> <span class="cls">ConcurrentQueue</span>&lt;<span class="cls">LogEntry</span>&gt; _entries;
+    <span class="kw">private</span> <span class="cls">IExternalScopeProvider</span>? _scopeProvider;
+
+    <span class="kw">public</span> <span class="cls">InMemoryLogger</span>(<span class="kw">string</span> category, <span class="cls">ConcurrentQueue</span>&lt;<span class="cls">LogEntry</span>&gt; entries)
+    {
+        _category = category;
+        _entries = entries;
+    }
+
+    <span class="kw">public void</span> <span class="met">SetScopeProvider</span>(<span class="cls">IExternalScopeProvider</span> provider)
+        => _scopeProvider = provider;
+
+    <span class="kw">public</span> <span class="cls">IDisposable</span>? <span class="met">BeginScope</span>&lt;<span class="cls">TState</span>&gt;(<span class="cls">TState</span> state) <span class="kw">where</span> <span class="cls">TState</span> : <span class="kw">notnull</span>
+        => _scopeProvider?.<span class="met">Push</span>(state) ?? <span class="cls">NullScope</span>.<span class="attr">Instance</span>;
+
+    <span class="kw">public bool</span> <span class="met">IsEnabled</span>(<span class="cls">LogLevel</span> logLevel) => logLevel != <span class="cls">LogLevel</span>.<span class="attr">None</span>;
+
+    <span class="kw">public void</span> Log&lt;<span class="cls">TState</span>&gt;(
+        <span class="cls">LogLevel</span> logLevel, <span class="cls">EventId</span> eventId, <span class="cls">TState</span> state,
+        <span class="cls">Exception</span>? exception, <span class="cls">Func</span>&lt;<span class="cls">TState</span>, <span class="cls">Exception</span>?, <span class="kw">string</span>&gt; formatter)
+    {
+        <span class="kw">if</span> (!<span class="met">IsEnabled</span>(logLevel)) <span class="kw">return</span>;
+
+        _entries.<span class="met">Enqueue</span>(<span class="kw">new</span> <span class="cls">LogEntry</span>(
+            logLevel, _category, eventId,
+            formatter(state, exception),
+            exception,
+            <span class="cls">DateTimeOffset</span>.<span class="attr">UtcNow</span>));
+    }
+}
+
+<span class="cm">// 3. The ILoggerProvider</span>
+[<span class="cls">ProviderAlias</span>(<span class="str">"InMemory"</span>)]
+<span class="kw">public class</span> <span class="cls">InMemoryLoggerProvider</span> : <span class="iface">ILoggerProvider</span>, <span class="iface">ISupportExternalScope</span>
+{
+    <span class="kw">private readonly</span> <span class="cls">ConcurrentQueue</span>&lt;<span class="cls">LogEntry</span>&gt; _entries = <span class="kw">new</span>();
+    <span class="kw">private readonly</span> <span class="cls">ConcurrentDictionary</span>&lt;<span class="kw">string</span>, <span class="cls">InMemoryLogger</span>&gt; _loggers = <span class="kw">new</span>();
+    <span class="kw">private</span> <span class="cls">IExternalScopeProvider</span> _scopeProvider = <span class="kw">new</span> <span class="cls">LoggerExternalScopeProvider</span>();
+
+    <span class="kw">public</span> <span class="cls">IReadOnlyCollection</span>&lt;<span class="cls">LogEntry</span>&gt; <span class="attr">Entries</span> => _entries.<span class="met">ToArray</span>();
+
+    <span class="kw">public</span> <span class="iface">ILogger</span> <span class="met">CreateLogger</span>(<span class="kw">string</span> categoryName)
+    {
+        <span class="kw">return</span> _loggers.<span class="met">GetOrAdd</span>(categoryName, name =>
+        {
+            <span class="kw">var</span> logger = <span class="kw">new</span> <span class="cls">InMemoryLogger</span>(name, _entries);
+            logger.<span class="met">SetScopeProvider</span>(_scopeProvider);
+            <span class="kw">return</span> logger;
+        });
+    }
+
+    <span class="kw">public void</span> <span class="met">SetScopeProvider</span>(<span class="cls">IExternalScopeProvider</span> scopeProvider)
+    {
+        _scopeProvider = scopeProvider;
+        <span class="kw">foreach</span> (<span class="kw">var</span> logger <span class="kw">in</span> _loggers.<span class="attr">Values</span>)
+            logger.<span class="met">SetScopeProvider</span>(scopeProvider);
+    }
+
+    <span class="kw">public void</span> <span class="met">Dispose</span>() { }
+}
+
+<span class="cm">// 4. Extension method for easy registration</span>
+<span class="kw">public static class</span> <span class="cls">InMemoryLoggerExtensions</span>
+{
+    <span class="kw">public static</span> <span class="cls">ILoggingBuilder</span> <span class="met">AddInMemory</span>(<span class="kw">this</span> <span class="cls">ILoggingBuilder</span> builder)
+    {
+        builder.<span class="attr">Services</span>.<span class="met">AddSingleton</span>&lt;<span class="cls">InMemoryLoggerProvider</span>&gt;();
+        builder.<span class="attr">Services</span>.<span class="met">AddSingleton</span>&lt;<span class="iface">ILoggerProvider</span>&gt;(
+            sp => sp.<span class="met">GetRequiredService</span>&lt;<span class="cls">InMemoryLoggerProvider</span>&gt;());
+        <span class="kw">return</span> builder;
+    }
+}
+
+<span class="cm">// 5. Register and use</span>
+builder.<span class="attr">Logging</span>.<span class="met">AddInMemory</span>();
+
+<span class="cm">// In tests — read all logged entries:</span>
+<span class="kw">var</span> provider = app.<span class="attr">Services</span>.<span class="met">GetRequiredService</span>&lt;<span class="cls">InMemoryLoggerProvider</span>&gt;();
+<span class="kw">var</span> errors = provider.<span class="attr">Entries</span>.<span class="met">Where</span>(e => e.<span class="attr">Level</span> >= <span class="cls">LogLevel</span>.<span class="attr">Error</span>);</pre>
+        </div>
+      </div>
+
+      <div class="quiz-area">
+        <h3>🧠 Quick Check</h3>
+        <div class="quiz-q">In a custom logging provider, what is the role of <code>ILoggerProvider</code> vs <code>ILogger</code>?</div>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="answer(this, false)">A) They are the same thing</button>
+          <button class="quiz-opt" onclick="answer(this, true)">B) ILoggerProvider is the factory that creates ILogger instances per category</button>
+          <button class="quiz-opt" onclick="answer(this, false)">C) ILogger is the factory, ILoggerProvider writes the logs</button>
+          <button class="quiz-opt" onclick="answer(this, false)">D) ILoggerProvider handles configuration, ILogger handles filtering</button>
+        </div>
+        <div class="quiz-feedback" id="qfb">✅ Correct! <code>ILoggerProvider</code> is a factory — the framework calls <code>CreateLogger(categoryName)</code> on it for each unique category. Each resulting <code>ILogger</code> instance handles logging for that specific category (class).</div>
+      </div>
+    </div>
+
+    <!-- ======================== LESSON 8 ======================== -->
+    <div id="lesson-8" class="hidden">
+      <div class="lesson-header">
+        <div class="lesson-tag">LESSON 9 · ADVANCED</div>
+        <div class="lesson-title">Production Best Practices</div>
+        <div class="lesson-subtitle">Everything you need to run reliable, observable, and efficient logging in real production systems.</div>
+      </div>
+
+      <div class="card">
+        <h3>✅ The Production Logging Checklist</h3>
+        <div class="step-list">
+          <div class="step-item"><div class="step-num">1</div><div class="step-body"><h4>Use structured logging — always use message templates</h4><p>Never use string interpolation in log calls. This single habit is the foundation of queryable, actionable logs.</p></div></div>
+          <div class="step-item"><div class="step-num">2</div><div class="step-body"><h4>Set Microsoft.* to Warning in production</h4><p>Framework logs at Debug/Info are extremely noisy and expensive. Silence them unless you're debugging a specific framework issue.</p></div></div>
+          <div class="step-item"><div class="step-num">3</div><div class="step-body"><h4>Use log scopes for correlation IDs</h4><p>Every HTTP request should carry a correlation ID through all log entries. Implement a middleware that creates the scope.</p></div></div>
+          <div class="step-item"><div class="step-num">4</div><div class="step-body"><h4>Never log sensitive data</h4><p>Passwords, credit card numbers, tokens, PII — never in logs. Use redaction or masking. Consider a <code>[SensitiveData]</code> attribute pattern.</p></div></div>
+          <div class="step-item"><div class="step-num">5</div><div class="step-body"><h4>Always pass exceptions to LogError/LogCritical</h4><p><code>LogError(ex, "message")</code> — the exception is the first parameter, not inside the string. This captures the full stack trace.</p></div></div>
+          <div class="step-item"><div class="step-num">6</div><div class="step-body"><h4>Use async/buffered sinks in production</h4><p>Synchronous logging on the hot path kills throughput. Serilog's <code>Async</code> wrapper or file sinks are buffered by default.</p></div></div>
+          <div class="step-item"><div class="step-num">7</div><div class="step-body"><h4>Define EventIds for important business events</h4><p>EventIds let you alert on specific events, build dashboards, and search logs with precision.</p></div></div>
+          <div class="step-item"><div class="step-num">8</div><div class="step-body"><h4>Log at the right level</h4><p>Think before choosing a level. Over-warning is as bad as over-debugging. If everything is a warning, nothing is.</p></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🛡️ Sensitive Data Redaction</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Safe Logging Pattern</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre"><span class="cm">// ❌ NEVER DO THIS</span>
+_logger.<span class="met">LogInformation</span>(<span class="str">"User login: email={Email}, password={Password}"</span>,
+    email, password);
+
+<span class="cm">// ✅ Redact sensitive fields</span>
+_logger.<span class="met">LogInformation</span>(<span class="str">"User login attempt: email={Email}"</span>, email);
+<span class="cm">// Never log the password at all</span>
+
+<span class="cm">// ✅ Mask partial data where needed</span>
+<span class="kw">var</span> maskedCard = <span class="str">"****"</span> + cardNumber[^<span class="num">4</span>..];
+_logger.<span class="met">LogInformation</span>(<span class="str">"Payment with card ending {CardSuffix}"</span>, maskedCard);
+
+<span class="cm">// ✅ Serilog destructuring policy to auto-redact</span>
+.<span class="met">Destructure</span>.<span class="met">ByTransforming</span>&lt;<span class="cls">LoginRequest</span>&gt;(r => <span class="kw">new</span>
+{
+    r.<span class="attr">Email</span>,
+    Password = <span class="str">"[REDACTED]"</span>
+})</pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>⚡ Performance Patterns</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Production Performance Patterns</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre"><span class="cm">// 1. Guard expensive log construction</span>
+<span class="kw">if</span> (_logger.<span class="met">IsEnabled</span>(<span class="cls">LogLevel</span>.<span class="attr">Debug</span>))
+    _logger.<span class="met">LogDebug</span>(<span class="str">"Full state: {@State}"</span>, <span class="met">BuildExpensiveState</span>());
+
+<span class="cm">// 2. Use [LoggerMessage] source generator for hot paths</span>
+[<span class="cls">LoggerMessage</span>(Level = <span class="cls">LogLevel</span>.<span class="attr">Information</span>, Message = <span class="str">"Request {Path} took {ElapsedMs}ms"</span>)]
+<span class="kw">private partial void</span> <span class="met">LogRequestTiming</span>(<span class="kw">string</span> path, <span class="kw">long</span> elapsedMs);
+
+<span class="cm">// 3. Use Serilog Async wrapper for file sinks</span>
+.<span class="met">WriteTo</span>.<span class="met">Async</span>(a => a.<span class="met">File</span>(<span class="str">"logs/app-.log"</span>,
+    rollingInterval: <span class="cls">RollingInterval</span>.<span class="attr">Day</span>,
+    bufferSize: <span class="num">10000</span>))
+
+<span class="cm">// 4. Never allocate strings for suppressed logs</span>
+<span class="cm">// ❌ Always allocates</span>
+_logger.<span class="met">LogDebug</span>($<span class="str">"Items: {string.Join(", ", items)}"</span>);
+<span class="cm">// ✅ Only allocates if Debug is enabled</span>
+_logger.<span class="met">LogDebug</span>(<span class="str">"Items: {Items}"</span>, items); <span class="cm">// Deferred formatting</span></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🏗️ Complete Production Architecture</h3>
+        <div class="arch-diagram">
+          <div style="color:var(--text);font-weight:700;margin-bottom:12px;">Production Logging Stack</div>
+          <div><span class="box">Your Code (ILogger&lt;T&gt;)</span></div>
+          <div style="margin:4px 0;">↓ message templates + scopes</div>
+          <div><span class="box">Serilog Pipeline</span></div>
+          <div style="margin:4px 0;">↓ enrichers add MachineName, ThreadId, Env</div>
+          <div>
+            <span class="box2">Console (JSON)</span> &nbsp;
+            <span class="box2">File (rolling)</span> &nbsp;
+            <span class="box3">Seq / Elastic</span>
+          </div>
+          <div style="margin:4px 0;">↓</div>
+          <div>
+            <span class="box3">Alerting (PagerDuty / Opsgenie)</span>
+          </div>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C# — Full Production Setup</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre">builder.<span class="attr">Host</span>.<span class="met">UseSerilog</span>((ctx, svc, cfg) => cfg
+    .<span class="met">ReadFrom</span>.<span class="met">Configuration</span>(ctx.<span class="attr">Configuration</span>)
+    .<span class="met">ReadFrom</span>.<span class="met">Services</span>(svc)
+    .<span class="met">MinimumLevel</span>.<span class="met">Information</span>()
+    .<span class="met">MinimumLevel</span>.<span class="met">Override</span>(<span class="str">"Microsoft"</span>, <span class="cls">LogEventLevel</span>.<span class="attr">Warning</span>)
+    .<span class="met">Enrich</span>.<span class="met">FromLogContext</span>()       <span class="cm">// Picks up BeginScope() properties</span>
+    .<span class="met">Enrich</span>.<span class="met">WithMachineName</span>()
+    .<span class="met">Enrich</span>.<span class="met">WithEnvironmentName</span>()
+    .<span class="met">Enrich</span>.<span class="met">WithProperty</span>(<span class="str">"Application"</span>, <span class="str">"MyApp"</span>)
+    .<span class="met">Enrich</span>.<span class="met">WithProperty</span>(<span class="str">"Version"</span>, Assembly.<span class="met">GetEntryAssembly</span>()!
+        .<span class="met">GetCustomAttribute</span>&lt;<span class="cls">AssemblyInformationalVersionAttribute</span>&gt;()!
+        .<span class="attr">InformationalVersion</span>)
+    .<span class="met">WriteTo</span>.<span class="met">Async</span>(a =>
+    {
+        <span class="cm">// Console: JSON for container log collection</span>
+        a.<span class="met">Console</span>(<span class="kw">new</span> <span class="cls">CompactJsonFormatter</span>());
+
+        <span class="cm">// File: rolling daily, keep 30 days</span>
+        a.<span class="met">File</span>(<span class="str">"logs/app-.log"</span>,
+            rollingInterval: <span class="cls">RollingInterval</span>.<span class="attr">Day</span>,
+            retainedFileCountLimit: <span class="num">30</span>,
+            fileSizeLimitBytes: <span class="num">100_000_000</span>);
+    })
+);
+
+app.<span class="met">UseSerilogRequestLogging</span>(opts =>
+{
+    opts.<span class="attr">MessageTemplate</span> = <span class="str">"{RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000}ms"</span>;
+    opts.<span class="attr">GetLevel</span> = (ctx, elapsed, ex) =>
+        ex != <span class="kw">null</span> || ctx.<span class="attr">Response</span>.<span class="attr">StatusCode</span> >= <span class="num">500</span>
+            ? <span class="cls">LogEventLevel</span>.<span class="attr">Error</span>
+            : ctx.<span class="attr">Response</span>.<span class="attr">StatusCode</span> >= <span class="num">400</span>
+            ? <span class="cls">LogEventLevel</span>.<span class="attr">Warning</span>
+            : <span class="cls">LogEventLevel</span>.<span class="attr">Information</span>;
+});</pre>
+        </div>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, rgba(124,106,247,0.1), rgba(86,207,178,0.1)); border-color: var(--accent);">
+        <h3>🎓 Course Complete!</h3>
+        <p style="margin-bottom:12px;">You now know everything to be production-ready with ASP.NET Core logging:</p>
+        <div class="tag-row">
+          <span class="tag">✅ Logging Architecture</span>
+          <span class="tag">✅ Log Levels</span>
+          <span class="tag">✅ ILogger DI</span>
+          <span class="tag">✅ Message Templates</span>
+          <span class="tag">✅ appsettings Config</span>
+          <span class="tag">✅ Scopes & Correlation</span>
+          <span class="tag">✅ Built-in Providers</span>
+          <span class="tag">✅ Serilog</span>
+          <span class="tag">✅ Custom Provider</span>
+          <span class="tag">✅ Production Patterns</span>
+        </div>
+      </div>
+
+      <div class="quiz-area">
+        <h3>🧠 Final Check</h3>
+        <div class="quiz-q">In production, which of the following is the most important single habit for effective logging?</div>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="answer(this, false)">A) Always use Critical level so alerts fire</button>
+          <button class="quiz-opt" onclick="answer(this, true)">B) Use message templates (not string interpolation) so logs are structured and queryable</button>
+          <button class="quiz-opt" onclick="answer(this, false)">C) Log every method entry and exit</button>
+          <button class="quiz-opt" onclick="answer(this, false)">D) Use Console provider only</button>
+        </div>
+        <div class="quiz-feedback" id="qfb">✅ Perfect! Structured logging via message templates is the foundation everything else builds on. Without it, you have unqueryable text blobs. With it, you can filter, aggregate, alert, and debug any production issue with surgical precision. 🎉</div>
+      </div>
+    </div>
+
+  </div><!-- end #content -->
+
+  <div class="nav-buttons">
+    <button class="btn btn-outline" onclick="prevLesson()">← Previous</button>
+    <span id="lesson-counter" style="font-size:13px;color:var(--text-muted);">1 / 9</span>
+    <button class="btn btn-primary" onclick="nextLesson()">Next Lesson →</button>
+  </div>
+
+  <footer id="page-footer">
+    <p><span class="footer-label">Email:</span><a href="mailto:aaboshady59@gmail.com">aaboshady59@gmail.com</a></p>
+    <p><span class="footer-label">LinkedIn:</span><a href="https://www.linkedin.com/in/ahmed-ashraf-2a0146320/" target="_blank" rel="noopener noreferrer">linkedin.com/in/ahmed-ashraf-2a0146320</a></p>
+    <p><span class="footer-label">Phone:</span>01558921462</p>
+  </footer>
+</div>
+
+<script>
+let current = 0;
+const total = 9;
+const completed = new Set();
+
+const titles = [
+  "How .NET Handles Logging",
+  "Log Levels Explained",
+  "ILogger & Dependency Injection",
+  "appsettings.json Configuration",
+  "Structured Logging & Scopes",
+  "Built-in Logging Providers",
+  "Serilog Integration",
+  "Custom Log Provider",
+  "Production Best Practices"
+];
+const metas = [
+  "Fundamentals · ~10 min","Fundamentals · ~8 min","Fundamentals · ~12 min",
+  "Configuration · ~10 min","Configuration · ~10 min","Configuration · ~8 min",
+  "Advanced · ~15 min","Advanced · ~12 min","Advanced · ~10 min"
+];
+
+function goTo(n) {
+  document.getElementById('lesson-' + current).classList.add('hidden');
+  completed.add(current);
+  current = n;
+  document.getElementById('lesson-' + current).classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach((el,i) => {
+    el.classList.toggle('active', i === current);
+    if (completed.has(i)) el.classList.add('done');
+    document.getElementById('nn'+i).textContent = completed.has(i) ? '✓' : (i+1);
+  });
+  document.getElementById('topbar-title').textContent = 'Lesson ' + (current+1) + ' — ' + titles[current];
+  document.getElementById('topbar-meta').textContent = metas[current];
+  document.getElementById('lesson-counter').textContent = (current+1) + ' / ' + total;
+  const pct = Math.round((completed.size / total) * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = completed.size + ' / ' + total + ' lessons completed';
+  window.scrollTo(0,0);
+  document.getElementById('main').scrollTo(0,0);
+}
+
+function nextLesson() { if (current < total-1) goTo(current+1); }
+function prevLesson() { if (current > 0) goTo(current-1); }
+
+function answer(btn, correct) {
+  const opts = btn.parentElement.querySelectorAll('.quiz-opt');
+  opts.forEach(o => o.disabled = true);
+  btn.classList.add(correct ? 'correct' : 'wrong');
+  const fb = btn.closest('.quiz-area').querySelector('.quiz-feedback');
+  fb.classList.add('show', correct ? 'ok' : 'fail');
+  if (!correct) fb.textContent = '❌ Not quite — re-read the lesson section and try again!';
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.textContent);
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+
+// Init
+document.querySelectorAll('.nav-item').forEach((el,i) => {
+  if (i === 0) el.classList.add('active');
+});
+</script>
+
+</body>
+</html>
